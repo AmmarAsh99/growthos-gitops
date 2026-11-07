@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-push
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: postgres:16-alpine
+          command: ['sh', '-c']
+          args:
+            - |
+              until pg_isready -h postgres -p 5432; do
+                echo "waiting for db..."
+                sleep 2
+              done
+      containers:
+        - name: db-push
+          image: ammarrepo/growthos-db-push:81effb8cc46196c616b9ae2955e0121cab19348e
+          env:
+            - name: DATABASE_URL # The variable name inside your container
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets # The name of your Secret
+                  key: DATABASE_URL
+          command: ['npm', 'run', 'db:migrate']
+      restartPolicy: Never
+  backoffLimit: 4

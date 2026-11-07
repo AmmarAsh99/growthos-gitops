@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: growthos
+  labels:
+    app: postgres
+spec:
+  ports:
+    - port: 5432
+  clusterIP: None
+  selector:
+    app: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgress
+  namespace: growthos
+spec:
+  selector:
+    matchLabels:
+      app: postgres # has to match .spec.template.metadata.labels
+  serviceName: 'postgres'
+  replicas: 1 # by default is 1
+  minReadySeconds: 10 # by default is 0
+  template:
+    metadata:
+      labels:
+        app: postgres # has to match .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: postgres
+          image: postgres:18.6
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          env:
+            - name: POSTGRES_USER # The variable name inside your container
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets # The name of your Secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD # The variable name inside your container
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets # The name of your Secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB # The variable name inside your container
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets # The name of your Secret
+                  key: POSTGRES_DB
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ['ReadWriteOnce']
+        resources:
+          requests:
+            storage: 5Gi

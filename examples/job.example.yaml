@@ -1,0 +1,36 @@
+# Copy to k8s/job.yaml and replace placeholders before applying.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-push
+  namespace: growthos
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+          args:
+            - |
+              until pg_isready -h postgres -p 5432; do
+                echo "waiting for db..."
+                sleep 2
+              done
+      containers:
+        - name: db-push
+          image: YOUR_DOCKERHUB_USERNAME/growthos-db-push:YOUR_IMAGE_TAG
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: DATABASE_URL
+          command:
+            - npm
+            - run
+            - db:migrate
+      restartPolicy: Never
+  backoffLimit: 4

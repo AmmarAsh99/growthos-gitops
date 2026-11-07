@@ -1,0 +1,36 @@
+# Copy to k8s/growthos-web.yaml and replace placeholders before applying.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: growthos-web-deployment
+  labels:
+    app: growthos-web
+  namespace: growthos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: growthos-web
+  template:
+    metadata:
+      labels:
+        app: growthos-web
+    spec:
+      containers:
+        - name: growthos-web
+          image: YOUR_DOCKERHUB_USERNAME/growthos-frontend:YOUR_IMAGE_TAG
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: growthos
+spec:
+  selector:
+    app: growthos-web
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
