@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: growthos-web
-          image: ammarrepo/growthos-frontend:81effb8cc46196c616b9ae2955e0121cab19348e
+          image: ammarrepo/growthos-frontend:873013ea73e7b3d6cde3f02a5bb79de5fe4d2f8b
           ports:
             - containerPort: 8080
 

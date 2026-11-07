@@ -22,7 +22,7 @@ spec:
               done
       containers:
         - name: db-push
-          image: ammarrepo/growthos-db-push:81effb8cc46196c616b9ae2955e0121cab19348e
+          image: ammarrepo/growthos-db-push:873013ea73e7b3d6cde3f02a5bb79de5fe4d2f8b
           env:
             - name: DATABASE_URL # The variable name inside your container
               valueFrom:
