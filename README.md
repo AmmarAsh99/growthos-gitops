@@ -69,7 +69,7 @@ kubectl port-forward service/web 8080:8080 -n growthos
 
 Open http://localhost:8080. Full browser-to-API access also depends on the frontend's API URL/proxy configuration; ingress and TLS are not configured in this repository.
 
-## Later releases and migrations
+## Later releases and migrations (manual kubectl deployment)
 
 Update the frontend, backend, and migration image tags to the intended release. Applying a completed Job again does not rerun it, and its Pod template cannot normally be updated in place. After confirming the previous Job has finished and its logs are no longer needed, recreate it:
 
@@ -81,6 +81,23 @@ kubectl wait --for=condition=complete job/db-push -n growthos --timeout=300s
 
 After success, apply the application Deployments again. Plan migrations to remain compatible with the running application during upgrades.
 
-## GitOps setup next
+## Deploy with Argo CD
 
-Configure Argo CD or Flux to reconcile the intended manifests, excluding `secrets.yaml.example`. Provision secrets before workloads. Configure controller-specific migration ordering and Job recreation before enabling automated releases; the manual commands above do not define that automation. If workloads already exist in another namespace, plan their migration before syncing these manifests, since adding a namespace does not move existing resources.
+Before the first sync, apply `namespace.yaml` and your ignored `secrets.local.yaml` manually as shown above. Push the manifest changes to GitHub. Create an Argo CD Application pointing to `https://github.com/AmmarAsh99/growthos-gitops.git`, revision `main`, path `.`, and destination namespace `growthos`. Select the intended cluster and start with manual sync. The `.example` file is not a deployable YAML manifest; do not configure Argo CD to include it.
+
+The manifests define this order within the Sync phase:
+
+| Wave | Resources | Gate before proceeding |
+| --- | --- | --- |
+| `-2` | Namespace | Namespace exists |
+| `-1` | PostgreSQL Service and StatefulSet | PostgreSQL StatefulSet is healthy |
+| `0` | Migration Job (Sync hook) | Migration succeeds |
+| `1` | API and frontend Deployments and Services | Application rollout |
+
+The migration uses a `Sync` hook so the database can be created first on an empty cluster. `BeforeHookCreation` deletes the previous Job before creating the next run; its logs remain available until that deletion. A failed migration stops the sync before the application updates are applied. Existing application Pods keep running during migrations, so schema changes must remain compatible with them.
+
+Use a full Application sync. Selective sync skips hooks; do not enable `ApplyOutOfSyncOnly=true` for this Application. The migration hook can run on subsequent full syncs even without a new migration, so `db:migrate` must safely handle already-applied migrations. After the first successful sync, enable automatic sync if desired. Argo CD handles Job recreation; the manual Job deletion commands above are only for deployments performed directly with kubectl.
+
+If workloads already exist in another namespace, plan their migration before syncing these manifests, since adding a namespace does not move existing resources. Sync waves are interpreted by Argo CD; `kubectl apply` alone does not enforce them.
+
+Reference: [Argo CD sync phases and waves](https://argo-cd.readthedocs.io/en/latest/user-guide/sync-waves/).

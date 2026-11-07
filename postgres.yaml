@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: postgres
   namespace: growthos
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
   labels:
     app: postgres
 spec:
@@ -17,6 +19,8 @@ kind: StatefulSet
 metadata:
   name: postgress
   namespace: growthos
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   selector:
     matchLabels:

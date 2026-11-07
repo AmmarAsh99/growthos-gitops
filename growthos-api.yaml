@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: growthos-api-deployment
   namespace: growthos
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     app: growthos-api
 spec:
@@ -55,6 +57,8 @@ kind: Service
 metadata:
   name: api
   namespace: growthos
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   selector:
     app: growthos-api
