@@ -1,0 +1,6 @@
+# Local credentials must never be committed.
+secrets.yaml
+secrets.local.yaml
+.env
+.env.*
+!.env.example

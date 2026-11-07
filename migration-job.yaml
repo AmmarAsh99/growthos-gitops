@@ -2,6 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: db-push
+  namespace: growthos
 spec:
   template:
     spec:
